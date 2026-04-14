@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loopwise — Build the person you're becoming</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0C0C0A;
+    --surface: #141412;
+    --surface2: #1C1C19;
+    --border: rgba(255,255,255,0.08);
+    --border-strong: rgba(255,255,255,0.14);
+    --text: #F0EDE6;
+    --text-muted: #7A7870;
+    --text-dim: #4A4845;
+    --accent: #C8F060;
+    --accent-dim: rgba(200,240,96,0.12);
+    --accent-text: #2A3A00;
+    --danger: #FF6B4A;
+    --danger-dim: rgba(255,107,74,0.12);
+    --gold: #F0C040;
+    --gold-dim: rgba(240,192,64,0.12);
+    --radius: 12px;
+    --radius-lg: 18px;
+    --radius-pill: 999px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* NOISE TEXTURE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.6;
+  }
+
+  .app { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; padding: 0 20px 120px; }
+
+  /* HEADER */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 0 32px;
+  }
+  .logo {
+    font-family: 'Instrument Serif', serif;
+    font-size: 22px;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--accent); }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .streak-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--gold-dim);
+    border: 1px solid rgba(240,192,64,0.2);
+    border-radius: var(--radius-pill);
+    padding: 5px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--gold);
+    font-family: 'DM Mono', monospace;
+  }
+  .avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border-strong);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+
+  /* IDENTITY LABEL */
+  .identity-label {
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+  .logo-block { display: flex; flex-direction: column; }
+
+  /* URGENCY BANNER */
+  .urgency-banner {
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s;
+  }
+  .urgency-banner.incomplete {
+    background: rgba(255,107,74,0.1);
+    border: 1px solid rgba(255,107,74,0.25);
+    color: #FF8066;
+  }
+  .urgency-banner.complete {
+    background: rgba(200,240,96,0.08);
+    border: 1px solid rgba(200,240,96,0.2);
+    color: var(--accent);
+  }
+  .urgency-banner.recovery {
+    background: rgba(240,192,64,0.08);
+    border: 1px solid rgba(240,192,64,0.2);
+    color: var(--gold);
+  }
+
+  /* FAILURE OVERLAY */
+  .failure-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 300;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    padding: 40px;
+  }
+  .failure-overlay.show { opacity: 1; pointer-events: all; }
+  .failure-num {
+    font-family: 'Instrument Serif', serif;
+    font-size: 72px;
+    color: var(--danger);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .failure-label {
+    font-size: 13px;
+    font-family: 'DM Mono', monospace;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 20px;
+  }
+  .failure-msg {
+    font-family: 'Instrument Serif', serif;
+    font-size: 24px;
+    color: var(--text);
+    text-align: center;
+    line-height: 1.3;
+    margin-bottom: 12px;
+  }
+  .failure-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.6;
+  }
+
+  /* DATE STRIP */
+  .date-strip {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 32px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+  }
+  .date-strip::-webkit-scrollbar { display: none; }
+  .day-dot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    min-width: 44px;
+    padding: 8px 4px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .day-dot.today { background: var(--surface2); border: 1px solid var(--border-strong); }
+  .day-dot-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; font-family: 'DM Mono', monospace; }
+  .day-dot-num { font-size: 15px; font-weight: 500; color: var(--text-muted); }
+  .day-dot.today .day-dot-num { color: var(--text); }
+  .day-dot-pip { width: 4px; height: 4px; border-radius: 50%; background: var(--text-dim); }
+  .day-dot.done .day-dot-pip { background: var(--accent); }
+  .day-dot.partial .day-dot-pip { background: var(--gold); }
+
+  /* SECTION HEADING */
+  .section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .section-title {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    font-family: 'DM Mono', monospace;
+  }
+  .add-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border-strong);
+    color: var(--text-muted);
+    font-size: 18px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .add-btn:hover { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+
+  /* HABIT CARDS */
+  .habits-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 32px; }
+
+  .habit-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: all 0.2s;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    position: relative;
+    overflow: hidden;
+  }
+  .habit-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--habit-color, var(--accent));
+    opacity: 0.5;
+    transition: opacity 0.2s;
+  }
+  .habit-card.done { border-color: rgba(200,240,96,0.2); background: rgba(200,240,96,0.04); }
+  .habit-card.done::before { opacity: 1; }
+  .habit-card.missed { border-color: rgba(255,107,74,0.15); }
+  .habit-card.missed::before { background: var(--danger); opacity: 0.4; }
+
+  .check-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid var(--border-strong);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+    background: transparent;
+  }
+  .habit-card.done .check-circle {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .check-circle svg { opacity: 0; transition: opacity 0.15s; }
+  .habit-card.done .check-circle svg { opacity: 1; }
+
+  .habit-info { flex: 1; }
+  .habit-name {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 2px;
+    transition: color 0.2s;
+  }
+  .habit-card.done .habit-name { color: var(--text-muted); }
+  .habit-meta {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: 'DM Mono', monospace;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .habit-streak-inline {
+    color: var(--gold);
+    font-size: 11px;
+  }
+
+  .habit-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .habit-time { font-size: 11px; color: var(--text-dim); font-family: 'DM Mono', monospace; }
+
+  /* COMPLETION ANIMATION */
+  @keyframes pop {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+  .habit-card.popping { animation: pop 0.3s ease; }
+
+  /* WEEKLY PROGRESS */
+  .progress-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 32px;
+  }
+  .progress-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
+  .progress-title { font-size: 14px; font-weight: 500; color: var(--text); }
+  .progress-sub { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+  .progress-pct {
+    font-family: 'Instrument Serif', serif;
+    font-size: 32px;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .progress-bar-track {
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.6s ease;
+  }
+  .days-row { display: flex; gap: 4px; }
+  .day-bar {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+  }
+  .day-bar-fill {
+    width: 100%;
+    height: 40px;
+    border-radius: 4px;
+    background: var(--surface2);
+    position: relative;
+    overflow: hidden;
+  }
+  .day-bar-inner {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--accent);
+    opacity: 0.6;
+    transition: height 0.5s ease;
+  }
+  .day-bar-label { font-size: 9px; color: var(--text-dim); font-family: 'DM Mono', monospace; text-transform: uppercase; }
+
+  /* AI COACH CARD */
+  .coach-card {
+    background: linear-gradient(135deg, #1A1F0A 0%, #141412 100%);
+    border: 1px solid rgba(200,240,96,0.15);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+  .coach-card::after {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(200,240,96,0.08) 0%, transparent 70%);
+  }
+  .coach-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(200,240,96,0.2);
+    border-radius: var(--radius-pill);
+    padding: 3px 10px;
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 12px;
+  }
+  .coach-title { font-family: 'Instrument Serif', serif; font-size: 18px; color: var(--text); margin-bottom: 8px; }
+  .coach-body { font-size: 13px; color: var(--text-muted); line-height: 1.65; margin-bottom: 16px; }
+  .coach-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--accent);
+    color: var(--accent-text);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 9px 18px;
+    border-radius: var(--radius-pill);
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .coach-cta:hover { opacity: 0.9; }
+  .coach-cta:active { transform: scale(0.97); }
+
+  /* PAYWALL MODAL */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal-sheet {
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: 24px 24px 0 0;
+    padding: 32px 28px 48px;
+    width: 100%;
+    max-width: 480px;
+    transform: translateY(40px);
+    transition: transform 0.3s ease;
+  }
+  .modal-overlay.open .modal-sheet { transform: translateY(0); }
+  .modal-handle { width: 36px; height: 3px; background: var(--border-strong); border-radius: 2px; margin: 0 auto 28px; }
+  .modal-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--gold-dim);
+    border: 1px solid rgba(240,192,64,0.2);
+    border-radius: var(--radius-pill);
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--gold);
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .modal-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 26px;
+    color: var(--text);
+    margin-bottom: 8px;
+    line-height: 1.2;
+  }
+  .modal-sub { font-size: 14px; color: var(--text-muted); margin-bottom: 28px; line-height: 1.6; }
+  .features-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+  .feature-row { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text); }
+  .feature-icon { width: 22px; height: 22px; border-radius: 50%; background: var(--accent-dim); border: 1px solid rgba(200,240,96,0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 11px; }
+  .price-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 6px; }
+  .price-main { font-family: 'Instrument Serif', serif; font-size: 36px; color: var(--text); }
+  .price-per { font-size: 14px; color: var(--text-muted); }
+  .price-note { font-size: 12px; color: var(--text-dim); margin-bottom: 20px; }
+  .pay-btn {
+    width: 100%;
+    background: var(--accent);
+    color: var(--accent-text);
+    border: none;
+    border-radius: var(--radius-pill);
+    padding: 15px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    margin-bottom: 12px;
+  }
+  .pay-btn:hover { opacity: 0.9; }
+  .pay-cancel {
+    width: 100%;
+    background: transparent;
+    color: var(--text-muted);
+    border: none;
+    padding: 10px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  /* ADD HABIT MODAL */
+  .add-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  .add-modal-overlay.open { opacity: 1; pointer-events: all; }
+  .add-modal-sheet {
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: 24px 24px 0 0;
+    padding: 28px 24px 48px;
+    width: 100%;
+    max-width: 480px;
+    transform: translateY(40px);
+    transition: transform 0.3s ease;
+  }
+  .add-modal-overlay.open .add-modal-sheet { transform: translateY(0); }
+  .add-modal-title { font-size: 17px; font-weight: 500; color: var(--text); margin-bottom: 20px; }
+  .field-label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; font-family: 'DM Mono', monospace; margin-bottom: 8px; }
+  .text-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-size: 15px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    margin-bottom: 20px;
+    transition: border-color 0.15s;
+  }
+  .text-input:focus { border-color: rgba(200,240,96,0.4); }
+  .text-input::placeholder { color: var(--text-dim); }
+  .color-row { display: flex; gap: 8px; margin-bottom: 24px; }
+  .color-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.15s, border-color 0.15s;
+  }
+  .color-dot:hover { transform: scale(1.1); }
+  .color-dot.selected { border-color: white; transform: scale(1.15); }
+  .save-btn {
+    width: 100%;
+    background: var(--accent);
+    color: var(--accent-text);
+    border: none;
+    border-radius: var(--radius-pill);
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .save-btn:hover { opacity: 0.9; }
+
+  /* MISS PENALTY TOAST */
+  .toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-pill);
+    padding: 10px 18px;
+    font-size: 13px;
+    color: var(--text);
+    z-index: 200;
+    opacity: 0;
+    transition: all 0.25s;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.danger { border-color: rgba(255,107,74,0.3); color: var(--danger); }
+  .toast.success { border-color: rgba(200,240,96,0.3); color: var(--accent); }
+  .toast.recovery { border-color: rgba(240,192,64,0.25); color: var(--gold); }
+
+  /* BOTTOM NAV */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(12,12,10,0.95);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-around;
+    padding: 12px 0 24px;
+    z-index: 50;
+  }
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    padding: 4px 20px;
+    border-radius: var(--radius);
+    transition: background 0.15s;
+  }
+  .nav-item:hover { background: var(--surface2); }
+  .nav-icon { font-size: 20px; opacity: 0.4; transition: opacity 0.15s; }
+  .nav-label { font-size: 10px; color: var(--text-dim); font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: 0.05em; }
+  .nav-item.active .nav-icon { opacity: 1; }
+  .nav-item.active .nav-label { color: var(--accent); }
+
+  /* ENTRANCE ANIMATION */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-in { animation: fadeUp 0.4s ease both; }
+  .animate-in:nth-child(1) { animation-delay: 0.05s; }
+  .animate-in:nth-child(2) { animation-delay: 0.1s; }
+  .animate-in:nth-child(3) { animation-delay: 0.15s; }
+  .animate-in:nth-child(4) { animation-delay: 0.2s; }
+
+  /* FREE LIMIT NUDGE */
+  .limit-nudge {
+    background: var(--surface);
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius-lg);
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 8px;
+  }
+  .limit-nudge:hover { border-color: rgba(200,240,96,0.3); background: var(--accent-dim); }
+  .limit-nudge-icon { font-size: 22px; opacity: 0.5; }
+  .limit-nudge-text { font-size: 13px; color: var(--text-muted); }
+  .limit-nudge-cta { font-size: 12px; color: var(--accent); font-weight: 500; margin-top: 2px; }
+
+  /* DAY COMPLETE BANNER */
+  .day-complete-banner {
+    background: rgba(200,240,96,0.07);
+    border: 1px solid rgba(200,240,96,0.22);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    margin-bottom: 16px;
+    display: none;
+    align-items: center;
+    gap: 14px;
+  }
+  .day-complete-banner.show { display: flex; }
+  .day-complete-icon {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--accent); display: flex; align-items: center;
+    justify-content: center; flex-shrink: 0;
+  }
+  .day-complete-title { font-size: 14px; font-weight: 500; color: var(--text); }
+  .day-complete-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+  /* DELETE CONTROL */
+  .habit-delete {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s, background 0.15s;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  .habit-card:hover .habit-delete { opacity: 1; }
+  .habit-delete:hover { color: var(--danger); background: var(--danger-dim); }
+
+  /* DELETE CONFIRM SHEET */
+  .confirm-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(8px);
+    z-index: 200;
+    display: flex; align-items: flex-end; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .confirm-overlay.open { opacity: 1; pointer-events: all; }
+  .confirm-sheet {
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: 24px 24px 0 0;
+    padding: 28px 24px 48px;
+    width: 100%; max-width: 480px;
+    transform: translateY(40px); transition: transform 0.3s ease;
+  }
+  .confirm-overlay.open .confirm-sheet { transform: translateY(0); }
+  .confirm-title { font-size: 16px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+  .confirm-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 24px; line-height: 1.5; }
+  .confirm-delete-btn {
+    width: 100%; background: var(--danger); color: white;
+    border: none; border-radius: var(--radius-pill);
+    padding: 14px; font-size: 15px; font-weight: 600;
+    cursor: pointer; margin-bottom: 10px; transition: opacity 0.15s;
+  }
+  .confirm-delete-btn:hover { opacity: 0.88; }
+  .confirm-cancel-btn {
+    width: 100%; background: transparent; color: var(--text-muted);
+    border: none; padding: 10px; font-size: 13px; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- HEADER -->
+  <div class="header animate-in">
+    <div class="logo-block">
+      <div class="logo">loop<span>wise</span></div>
+      <div class="identity-label" id="identity-label">Starter</div>
+    </div>
+    <div class="header-right">
+      <div class="streak-badge">
+        <span>🔥</span>
+        <span id="global-streak">7</span>
+      </div>
+      <div class="avatar">H</div>
+    </div>
+  </div>
+
+  <!-- URGENCY BANNER -->
+  <div class="urgency-banner incomplete" id="urgency-banner">
+    <span>⚠️</span><span id="urgency-text">Complete today or lose your streak</span>
+  </div>
+
+  <!-- DATE STRIP -->
+  <div class="date-strip animate-in" id="date-strip"></div>
+
+  <!-- HABITS SECTION -->
+  <div class="section-head animate-in">
+    <span class="section-title">Today's habits</span>
+    <div class="add-btn" id="open-add-btn" title="Add habit">+</div>
+  </div>
+
+  <div class="habits-list animate-in" id="habits-list"></div>
+
+  <!-- DAY COMPLETE BANNER -->
+  <div class="day-complete-banner" id="day-complete-banner">
+    <div class="day-complete-icon">
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><path d="M1 6L6 11L15 1" stroke="#2A3A00" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div>
+      <div class="day-complete-title">Day complete. Streak protected.</div>
+      <div class="day-complete-sub" id="day-complete-sub">All habits done — come back tomorrow.</div>
+    </div>
+  </div>
+  <div class="section-head">
+    <span class="section-title">This week</span>
+  </div>
+  <div class="progress-card animate-in">
+    <div class="progress-header">
+      <div>
+        <div class="progress-title">Completion rate</div>
+        <div class="progress-sub">Mon — Sun</div>
+      </div>
+      <div class="progress-pct" id="week-pct">71%</div>
+    </div>
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill" id="progress-fill" style="width:71%"></div>
+    </div>
+    <div class="days-row" id="days-row"></div>
+  </div>
+
+  <!-- AI COACH CARD -->
+  <div class="coach-card animate-in" id="coach-card">
+    <div class="coach-pill">✦ AI Coach</div>
+    <div class="coach-title">Your weekly insight is ready</div>
+    <div class="coach-body">You completed 15/21 habits this week. You're most consistent on weekdays — weekends are your gap. One targeted habit on Saturday morning could push you above 80%.</div>
+    <button class="coach-cta" id="coach-unlock-btn">Unlock AI insights ↗</button>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-sheet">
+    <div class="modal-handle"></div>
+    <div class="confirm-title" id="confirm-title">Delete this habit?</div>
+    <div class="confirm-sub">This will remove the habit and its streak permanently. This can't be undone.</div>
+    <button class="confirm-delete-btn" id="confirm-delete-btn">Delete habit</button>
+    <button class="confirm-cancel-btn" id="confirm-cancel-btn">Cancel</button>
+  </div>
+</div>
+
+<!-- FAILURE OVERLAY -->
+<div class="failure-overlay" id="failure-overlay">
+  <div class="failure-num" id="failure-num">7</div>
+  <div class="failure-label">day streak — gone</div>
+  <div class="failure-msg" id="failure-msg">You broke a 7 day streak.</div>
+  <div class="failure-sub">It took discipline to build that.<br>You can build it again — starting today.</div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+  <div class="nav-item active">
+    <div class="nav-icon">◉</div>
+    <div class="nav-label">Today</div>
+  </div>
+  <div class="nav-item">
+    <div class="nav-icon">◈</div>
+    <div class="nav-label">Stats</div>
+  </div>
+  <div class="nav-item">
+    <div class="nav-icon">◎</div>
+    <div class="nav-label">Coach</div>
+  </div>
+  <div class="nav-item">
+    <div class="nav-icon">◇</div>
+    <div class="nav-label">Profile</div>
+  </div>
+</div>
+
+<!-- PAYWALL MODAL -->
+<div class="modal-overlay" id="paywall-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-badge">✦ Loopwise Pro</div>
+    <div class="modal-title">Don't break what you've built.</div>
+    <div class="modal-sub">Your 7-day streak is worth protecting. Unlock everything — unlimited habits, AI coaching, and streak freeze.</div>
+    <div class="features-list">
+      <div class="feature-row"><div class="feature-icon">✓</div> Unlimited habits (free = 2 max)</div>
+      <div class="feature-row"><div class="feature-icon">✓</div> Weekly AI coach report</div>
+      <div class="feature-row"><div class="feature-icon">✓</div> Streak freeze (1/month)</div>
+      <div class="feature-row"><div class="feature-icon">✓</div> Pattern insights & weak spots</div>
+      <div class="feature-row"><div class="feature-icon">✓</div> Unlimited history</div>
+    </div>
+    <div class="price-row">
+      <div class="price-main">$9</div>
+      <div class="price-per">/ month</div>
+    </div>
+    <div class="price-note">Cancel anytime. No trial required — just results.</div>
+    <button class="pay-btn" id="pay-btn">Start Loopwise Pro</button>
+    <button class="pay-cancel" id="pay-cancel">Not now</button>
+  </div>
+</div>
+
+<!-- ADD HABIT MODAL -->
+<div class="add-modal-overlay" id="add-modal">
+  <div class="add-modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="add-modal-title">New habit</div>
+    <div class="field-label">What will you do daily?</div>
+    <input type="text" class="text-input" id="habit-name-input" placeholder="e.g. Morning workout, Read 20 pages…" maxlength="40">
+    <div class="field-label">Color</div>
+    <div class="color-row" id="color-row"></div>
+    <button class="save-btn" id="save-habit-btn">Add habit</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const COLORS = ['#C8F060','#F0C040','#FF6B4A','#60C8F0','#C060F0','#F060A0','#60F0A0'];
+const FREE_HABIT_LIMIT = 2;
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function daysBetween(keyA, keyB) {
+  if (!keyA || !keyB) return null;
+  return Math.round((new Date(keyB) - new Date(keyA)) / 86400000);
+}
+
+let state = {
+  isPro: false,
+  streak: 7,
+  lastOpenedDay: null,       // day user last opened app
+  lastCompletedDay: null,    // day user last fully completed all habits
+  dayStreakCredited: false,
+  habits: [
+    { id: 1, name: 'Morning workout', color: '#C8F060', streak: 7, done: false },
+    { id: 2, name: 'Read 20 pages', color: '#F0C040', streak: 5, done: false },
+  ],
+  weekData: [0.9, 0.8, 1.0, 0.6, 0.7, 0.3, null],
+  selectedColor: '#C8F060',
+  nextId: 3
+};
+
+function saveState() {
+  try { localStorage.setItem('lw_state', JSON.stringify(state)); } catch(e) {}
+}
+
+function loadState() {
+  try {
+    const s = localStorage.getItem('lw_state');
+    if (!s) return;
+    const parsed = JSON.parse(s);
+    const today = todayKey();
+    const lastOpened = parsed.lastOpenedDay || null;
+    const gap = daysBetween(lastOpened, today);
+
+    // New day — reset done flags
+    if (lastOpened !== today) {
+      parsed.habits = (parsed.habits || []).map(h => ({ ...h, done: false }));
+      parsed.dayStreakCredited = false;
+    }
+
+    state = { ...state, ...parsed };
+
+    // Missed day: user skipped at least one full day
+    // gap >= 2 means they didn't open yesterday at all
+    // gap === 1 and yesterday wasn't completed also counts
+    if (gap !== null && gap >= 1) {
+      const prevDayCompleted = state.lastCompletedDay === lastOpened;
+      if (!prevDayCompleted && state.streak > 0) {
+        state.missedDayStreak = state.streak; // store for overlay
+        state.streak = 0;
+        state.habits = state.habits.map(h => ({ ...h, streak: 0 }));
+      }
+    }
+
+    state.lastOpenedDay = today;
+  } catch(e) {}
+}
+loadState();
+
+// DATE STRIP
+function buildDateStrip() {
+  const strip = document.getElementById('date-strip');
+  strip.innerHTML = '';
+  const today = new Date();
+  for (let i = -4; i <= 2; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    const div = document.createElement('div');
+    div.className = 'day-dot' + (i === 0 ? ' today' : '') + (i < 0 ? ' done' : '');
+    if (i === -1) div.classList.add('partial');
+    div.innerHTML = `
+      <div class="day-dot-label">${DAYS[d.getDay() === 0 ? 6 : d.getDay()-1]}</div>
+      <div class="day-dot-num">${d.getDate()}</div>
+      <div class="day-dot-pip"></div>
+    `;
+    strip.appendChild(div);
+  }
+}
+
+// HABITS LIST
+function buildHabits() {
+  const list = document.getElementById('habits-list');
+  list.innerHTML = '';
+
+  state.habits.forEach((h, idx) => {
+    const card = document.createElement('div');
+    card.className = 'habit-card animate-in' + (h.done ? ' done' : '');
+    card.style.setProperty('--habit-color', h.color);
+    card.innerHTML = `
+      <div class="check-circle">
+        <svg width="14" height="10" viewBox="0 0 14 10" fill="none">
+          <path d="M1 5L5 9L13 1" stroke="#2A3A00" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="habit-info">
+        <div class="habit-name">${h.name}</div>
+        <div class="habit-meta">
+          <span class="habit-streak-inline">🔥 ${h.streak}d</span>
+          <span>Daily</span>
+        </div>
+      </div>
+      <button class="habit-delete" data-idx="${idx}" title="Delete habit">×</button>
+    `;
+    // tap check-circle or habit-info to toggle; delete button separately
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.habit-delete')) return;
+      toggleHabit(idx);
+    });
+    list.appendChild(card);
+  });
+
+  // Wire delete buttons
+  list.querySelectorAll('.habit-delete').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openDeleteConfirm(parseInt(btn.dataset.idx));
+    });
+  });
+
+  // Free tier nudge
+  if (!state.isPro && state.habits.length >= FREE_HABIT_LIMIT) {
+    const nudge = document.createElement('div');
+    nudge.className = 'limit-nudge';
+    nudge.innerHTML = `
+      <div class="limit-nudge-icon">+</div>
+      <div>
+        <div class="limit-nudge-text">Free plan: 2 habits max</div>
+        <div class="limit-nudge-cta">Upgrade to add unlimited habits →</div>
+      </div>
+    `;
+    nudge.addEventListener('click', openPaywall);
+    list.appendChild(nudge);
+  }
+
+  updateDayCompleteBanner();
+}
+
+let interactionLocked = false;
+let pendingDeleteIdx = null;
+
+function getIdentityLabel(streak) {
+  if (streak === 0) return 'Day 1 — start again';
+  if (streak <= 3) return 'Starter';
+  if (streak <= 10) return 'Building';
+  if (streak <= 30) return 'Consistent';
+  return 'Disciplined';
+}
+
+function updateIdentityLabel() {
+  const el = document.getElementById('identity-label');
+  if (el) el.textContent = getIdentityLabel(state.streak);
+}
+
+function updateUrgencyBanner() {
+  const allDone = state.habits.length > 0 && state.habits.every(h => h.done);
+  const anyDone = state.habits.some(h => h.done);
+  const banner = document.getElementById('urgency-banner');
+  const text = document.getElementById('urgency-text');
+  if (allDone) {
+    banner.className = 'urgency-banner complete';
+    text.textContent = 'Streak protected for today';
+  } else if (state.streak === 0) {
+    banner.className = 'urgency-banner recovery';
+    text.textContent = 'Start fresh today — build it back';
+  } else if (anyDone) {
+    banner.className = 'urgency-banner incomplete';
+    text.textContent = "You're about to lose your streak — finish today";
+  } else {
+    banner.className = 'urgency-banner incomplete';
+    text.textContent = 'Finish before midnight or lose your streak';
+  }
+}
+
+function updateDayCompleteBanner() {
+  const allDone = state.habits.length > 0 && state.habits.every(h => h.done);
+  const banner = document.getElementById('day-complete-banner');
+  const sub = document.getElementById('day-complete-sub');
+  if (allDone) {
+    banner.classList.add('show');
+    sub.textContent = `${state.habits.length} of ${state.habits.length} habits done — come back tomorrow.`;
+  } else {
+    banner.classList.remove('show');
+  }
+}
+
+function showFailureOverlay(streakLost) {
+  const overlay = document.getElementById('failure-overlay');
+  document.getElementById('failure-num').textContent = streakLost;
+  document.getElementById('failure-msg').textContent = `Your ${streakLost}-day streak is gone.`;
+  overlay.classList.add('show');
+  interactionLocked = true;
+  setTimeout(() => {
+    overlay.classList.remove('show');
+    interactionLocked = false;
+  }, 1800);
+}
+
+function toggleHabit(idx) {
+  if (interactionLocked) return;
+  const wasAllDone = state.habits.every(h => h.done);
+  state.habits[idx].done = !state.habits[idx].done;
+  const isNowDone = state.habits[idx].done;
+
+  if (isNowDone) {
+    state.habits[idx].streak++;
+    showToast('✓ ' + state.habits[idx].name, 'success');
+  } else {
+    const lost = state.habits[idx].streak;
+    if (lost > 0) {
+      state.habits[idx].streak--;
+      showFailureOverlay(lost);
+    } else {
+      showToast('Habit unchecked', 'danger');
+    }
+    // If day was complete before, revoke global streak credit
+    if (wasAllDone && state.dayStreakCredited) {
+      state.streak = Math.max(0, state.streak - 1);
+      state.dayStreakCredited = false;
+      state.lastCompletedDay = null;
+      document.getElementById('global-streak').textContent = state.streak;
+      updateIdentityLabel();
+    }
+  }
+
+  // Award global streak exactly once per completed day
+  const allDoneNow = state.habits.every(h => h.done);
+  if (allDoneNow && !state.dayStreakCredited) {
+    state.streak++;
+    state.dayStreakCredited = true;
+    state.lastCompletedDay = todayKey();
+    document.getElementById('global-streak').textContent = state.streak;
+    updateIdentityLabel();
+  }
+
+  state.lastOpenedDay = todayKey();
+  buildHabits();
+  updateUrgencyBanner();
+  saveState();
+}
+
+// DELETE
+function openDeleteConfirm(idx) {
+  pendingDeleteIdx = idx;
+  document.getElementById('confirm-title').textContent = `Delete "${state.habits[idx].name}"?`;
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+document.getElementById('confirm-cancel-btn').addEventListener('click', () => {
+  document.getElementById('confirm-overlay').classList.remove('open');
+  pendingDeleteIdx = null;
+});
+document.getElementById('confirm-overlay').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('confirm-overlay')) {
+    document.getElementById('confirm-overlay').classList.remove('open');
+    pendingDeleteIdx = null;
+  }
+});
+document.getElementById('confirm-delete-btn').addEventListener('click', () => {
+  if (pendingDeleteIdx === null) return;
+  state.habits.splice(pendingDeleteIdx, 1);
+  pendingDeleteIdx = null;
+  document.getElementById('confirm-overlay').classList.remove('open');
+  buildHabits();
+  updateUrgencyBanner();
+  saveState();
+  showToast('Habit removed', '');
+});
+
+// WEEKLY BARS
+function buildWeekBars() {
+  const row = document.getElementById('days-row');
+  row.innerHTML = '';
+  state.weekData.forEach((val, i) => {
+    const bar = document.createElement('div');
+    bar.className = 'day-bar';
+    const pct = val === null ? 0 : Math.round(val * 100);
+    bar.innerHTML = `
+      <div class="day-bar-fill">
+        <div class="day-bar-inner" style="height:${pct}%"></div>
+      </div>
+      <div class="day-bar-label">${DAYS[i]}</div>
+    `;
+    row.appendChild(bar);
+  });
+}
+
+// PAYWALL
+function openPaywall() {
+  document.getElementById('paywall-modal').classList.add('open');
+}
+document.getElementById('pay-cancel').addEventListener('click', () => {
+  document.getElementById('paywall-modal').classList.remove('open');
+});
+document.getElementById('paywall-modal').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('paywall-modal')) {
+    document.getElementById('paywall-modal').classList.remove('open');
+  }
+});
+document.getElementById('pay-btn').addEventListener('click', () => {
+  state.isPro = true;
+  saveState();
+  document.getElementById('paywall-modal').classList.remove('open');
+  document.getElementById('coach-unlock-btn').textContent = 'View full report ↗';
+  document.getElementById('coach-card').style.borderColor = 'rgba(200,240,96,0.3)';
+  showToast('✓ Welcome to Pro', 'success');
+  buildHabits();
+});
+document.getElementById('coach-unlock-btn').addEventListener('click', openPaywall);
+
+// ADD HABIT
+function buildColorPicker() {
+  const row = document.getElementById('color-row');
+  row.innerHTML = '';
+  COLORS.forEach(c => {
+    const dot = document.createElement('div');
+    dot.className = 'color-dot' + (c === state.selectedColor ? ' selected' : '');
+    dot.style.background = c;
+    dot.addEventListener('click', () => {
+      state.selectedColor = c;
+      buildColorPicker();
+    });
+    row.appendChild(dot);
+  });
+}
+
+document.getElementById('open-add-btn').addEventListener('click', () => {
+  if (!state.isPro && state.habits.length >= FREE_HABIT_LIMIT) {
+    openPaywall();
+    return;
+  }
+  buildColorPicker();
+  document.getElementById('habit-name-input').value = '';
+  document.getElementById('add-modal').classList.add('open');
+  setTimeout(() => document.getElementById('habit-name-input').focus(), 300);
+});
+
+document.getElementById('add-modal').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('add-modal')) {
+    document.getElementById('add-modal').classList.remove('open');
+  }
+});
+
+document.getElementById('save-habit-btn').addEventListener('click', () => {
+  const name = document.getElementById('habit-name-input').value.trim();
+  if (!name) return;
+  state.habits.push({ id: state.nextId++, name, color: state.selectedColor, streak: 0, done: false });
+  saveState();
+  document.getElementById('add-modal').classList.remove('open');
+  buildHabits();
+  showToast('Habit added', 'success');
+});
+
+document.getElementById('habit-name-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('save-habit-btn').click();
+});
+
+// TOAST
+let toastTimer;
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (type || '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.className = 'toast', 2400);
+}
+
+// INIT
+buildDateStrip();
+buildHabits();
+buildWeekBars();
+updateIdentityLabel();
+updateUrgencyBanner();
+saveState(); // persist lastOpenedDay immediately
+
+// Show missed-day punishment on app open
+if (state.missedDayStreak) {
+  const lost = state.missedDayStreak;
+  state.missedDayStreak = 0;
+  saveState();
+  setTimeout(() => {
+    const overlay = document.getElementById('failure-overlay');
+    document.getElementById('failure-num').textContent = lost;
+    document.getElementById('failure-msg').textContent = `You missed a day. Your ${lost}-day streak is gone.`;
+    overlay.classList.add('show');
+    interactionLocked = true;
+    setTimeout(() => {
+      overlay.classList.remove('show');
+      interactionLocked = false;
+      document.getElementById('global-streak').textContent = state.streak;
+      updateIdentityLabel();
+      updateUrgencyBanner();
+      // Recovery follow-up toast
+      showToast('You lost your streak. Start again today.', 'recovery');
+    }, 2200);
+  }, 400);
+}
+</script>
+</body>
+</html>
