@@ -861,7 +861,7 @@
     <div class="modal-handle"></div>
     <div class="modal-badge">✦ Loopwise Pro</div>
     <div class="modal-title">Don't break what you've built.</div>
-    <div class="modal-sub">Your 7-day streak is worth protecting. Unlock everything — unlimited habits, AI coaching, and streak freeze.</div>
+    <div class="modal-sub">AI coaching is coming. Join the waitlist and you'll be first to know — plus locked in at the launch price.</div>
     <div class="features-list">
       <div class="feature-row"><div class="feature-icon">✓</div> Unlimited habits (free = 2 max)</div>
       <div class="feature-row"><div class="feature-icon">✓</div> Weekly AI coach report</div>
@@ -874,7 +874,7 @@
       <div class="price-per">/ month</div>
     </div>
     <div class="price-note">Cancel anytime. No trial required — just results.</div>
-    <button class="pay-btn" id="pay-btn">Start Loopwise Pro</button>
+    <button class="pay-btn" id="pay-btn">Join the Pro Waitlist</button>
     <button class="pay-cancel" id="pay-cancel">Not now</button>
   </div>
 </div>
@@ -1202,13 +1202,8 @@ document.getElementById('paywall-modal').addEventListener('click', (e) => {
   }
 });
 document.getElementById('pay-btn').addEventListener('click', () => {
-  state.isPro = true;
-  saveState();
+  window.open('https://tally.so/r/yPELe0', '_blank');
   document.getElementById('paywall-modal').classList.remove('open');
-  document.getElementById('coach-unlock-btn').textContent = 'View full report ↗';
-  document.getElementById('coach-card').style.borderColor = 'rgba(200,240,96,0.3)';
-  showToast('✓ Welcome to Pro', 'success');
-  buildHabits();
 });
 document.getElementById('coach-unlock-btn').addEventListener('click', openPaywall);
 
@@ -1302,3 +1297,4 @@ if (state.missedDayStreak) {
 </script>
 </body>
 </html>
+
