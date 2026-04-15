@@ -916,10 +916,7 @@ let state = {
   lastOpenedDay: null,       // day user last opened app
   lastCompletedDay: null,    // day user last fully completed all habits
   dayStreakCredited: false,
-  habits: [
-    { id: 1, name: 'Morning workout', color: '#C8F060', streak: 7, done: false },
-    { id: 2, name: 'Read 20 pages', color: '#F0C040', streak: 5, done: false },
-  ],
+  habits: [],
   weekData: [null, null, null, null, null, null, null],
   weekHistory: {},  // stores completion ratio per day key
   selectedColor: '#C8F060',
@@ -1024,7 +1021,17 @@ function buildHabits() {
     });
   });
 
-  // Free tier nudge
+  // Empty state
+  if (state.habits.length === 0) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'text-align:center;padding:32px 20px;color:var(--text-dim);font-size:14px;line-height:1.7;';
+    empty.innerHTML = `
+      <div style="font-size:28px;margin-bottom:12px;opacity:0.4">◎</div>
+      <div style="color:var(--text-muted);font-weight:500;margin-bottom:6px;">No habits yet</div>
+      <div>Tap + to add your first habit</div>
+    `;
+    list.appendChild(empty);
+  }
   if (!state.isPro && state.habits.length >= FREE_HABIT_LIMIT) {
     const nudge = document.createElement('div');
     nudge.className = 'limit-nudge';
@@ -1330,3 +1337,4 @@ if (state.missedDayStreak) {
 }
 </script>
 </body>
+</html>
