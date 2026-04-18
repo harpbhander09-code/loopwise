@@ -486,6 +486,12 @@
       return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     }
 
+    function yesterdayKey(){
+      const d = new Date();
+      d.setDate(d.getDate() - 1);
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
     function monthKey(){
       const d = new Date();
       return `${d.getFullYear()}-${d.getMonth()}`;
@@ -526,8 +532,8 @@
       }
 
       if (gap !== null && gap >= 1){
-        const previousDayComplete = state.lastCompletedDay === lastOpened;
-        if (!previousDayComplete && state.streak > 0){
+        const completedYesterday = state.lastCompletedDay === yesterdayKey();
+        if (!completedYesterday && state.streak > 0){
           state.missedDayStreak = state.streak;
           state.lossHistory.push({
             day: new Date().getDay(),
